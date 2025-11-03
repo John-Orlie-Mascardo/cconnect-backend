@@ -1,31 +1,58 @@
-import express from 'express'
-import { UserModel } from '../models/user.js'
-import { register } from '../controllers/user.js'
+import express from 'express';
+import { UserModel } from '../models/user.js';
+import { verifyFirebaseToken } from '../middleware/Firebaseauth.js';
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/register', async (req, res) => {
+/**
+ * 🔹 Register user to MongoDB after Firebase creates the account.
+ * This route is called *after* Firebase Auth registration in Flutter.
+ */
+router.post('/register', verifyFirebaseToken, async (req, res) => {
   try {
-    const { email, password } = req.body
-    const user = new UserModel({ email, password })
-    await user.save()
-    res.status(201).json({ message: 'User registered successfully' })
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-})
+    const { email, uid } = req.user;
 
-router.post('/login', async (req, res) => {
-  try {
-    const { username, password } = req.body
-    const user = await UserModel.findOne({ username, password })
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' })
+
+    // Check if user already exists
+    const existing = await UserModel.findOne({ firebaseUid: uid });
+    if (existing) {
+      return res.status(400).json({ message: 'User already exists' });
     }
-    res.json({ message: 'Login successful' })
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
-})
 
-export const userRoutes = router
+    // Save new user to MongoDB
+    const newUser = new UserModel({
+      email,
+      firebaseUid: uid,
+    });
+    await newUser.save();
+
+    res.status(201).json({ message: ' User registered & saved to MongoDB' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 🔹 Verify login via Firebase ID token
+ * (Firebase handles authentication; this just confirms the user exists)
+ */
+router.post('/login', verifyFirebaseToken, async (req, res) => {
+  try {
+    const { uid, email } = req.user;
+    const user = await UserModel.findOne({ firebaseUid: uid });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found in MongoDB' });
+    }
+
+    res.json({
+      message: '✅ Login successful',
+      email,
+      uid,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+export const userRoutes = router;

@@ -1,18 +1,35 @@
-import 'dotenv/config'
-import express from 'express'
-import mongoose from 'mongoose'
-import cors from 'cors'
-import { userRoutes } from './routes/user.js'
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { userRoutes } from './routes/user.js';
 
-const app = express()
+dotenv.config(); // load .env
 
-app.use(cors())
-app.use(express.json())
-app.use('/api/users', userRoutes)
+const app = express();
+app.use(express.json());
 
-mongoose.connect(process.env.MONGODB_URL)
-mongoose.connection.once('open', () => console.log('Now connected to MongoDB Atlas'))
+// Enable CORS
+app.use(
+  cors({
+    origin: 'http://localhost:52258',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  })
+);
+
+// Connect MongoDB using Atlas
+mongoose
+  .connect(process.env.MONGODB_URI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+  })
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
+
+// Use routes
+app.use('/api/user', userRoutes);
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000.')
-})
+  console.log('🚀 Server running on http://localhost:3000');
+});

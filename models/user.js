@@ -1,14 +1,8 @@
-import mongoose from 'mongoose'
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: [true, 'Email is required']
-  },
-  password: {
-    type: String,
-    required: [true, 'Password is required.']
-  }
-})
+  email: { type: String, required: true, unique: true },
+  firebaseUid: { type: String, required: true, unique: true },
+});
 
-export const UserModel = mongoose.model('User', userSchema)
+export const UserModel = mongoose.model('User', userSchema);
