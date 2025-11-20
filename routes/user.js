@@ -55,4 +55,10 @@ router.post('/login', verifyFirebaseToken, async (req, res) => {
   }
 });
 
+// Protected endpoint for POC: returns decoded token info
+router.get('/me', verifyFirebaseToken, (req, res) => {
+  if (!req.user) return res.status(500).json({ error: 'No user decoded from token' });
+  res.json({ uid: req.user.uid, email: req.user.email, claims: req.user });
+});
+
 export const userRoutes = router;
