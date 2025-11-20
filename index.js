@@ -21,17 +21,17 @@ app.use(
 
 // Connect MongoDB using Atlas
 mongoose
-  .connect(process.env.MONGODB_URI, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
 // Use routes
 app.use('/api/user', userRoutes);
 app.use('/api/contacts', contactsRoutes); // added
 
 app.listen(3000, () => {
-  console.log('🚀 Server running on http://localhost:3000');
+  console.log("🚀 Server running on http://localhost:3000");
 });
