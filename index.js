@@ -10,10 +10,17 @@ dotenv.config(); // load .env
 const app = express();
 app.use(express.json());
 
-// Enable CORS
+// Read base URLs from environment with sensible defaults
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:61458';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api';
+
+// Make API base URL available inside the app
+app.locals.baseUrl = API_BASE_URL;
+
+// Use CLIENT_ORIGIN for CORS so you don't have to edit code each time
 app.use(
   cors({
-    origin: 'http://localhost:61458',
+    origin: CLIENT_ORIGIN,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   })
