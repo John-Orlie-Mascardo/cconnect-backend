@@ -34,7 +34,7 @@ const createProduct = async (req, res) => {
       condition,
       quantity: qty,
       stock: stock !== undefined ? stock : qty,
-      image, // store filename in MongoDB
+       // store filename in MongoDB
     });
 
     const saved = await product.save();
