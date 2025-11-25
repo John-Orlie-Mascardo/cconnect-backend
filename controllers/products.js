@@ -28,6 +28,7 @@ const createProduct = async (req, res) => {
 
     const qty = quantity !== undefined ? quantity : stock !== undefined ? stock : 0;
 
+
     // Get uploaded file from multer
     const imageFile = req.file ? req.file.filename : null;
 
@@ -41,7 +42,7 @@ const createProduct = async (req, res) => {
       condition,
       quantity: qty,
       stock: stock !== undefined ? stock : qty,
-      image: imageFile,
+      image: imageFile, // store uploaded filename in MongoDB
     });
 
     const saved = await product.save();
