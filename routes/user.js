@@ -56,10 +56,17 @@ router.post('/login', verifyFirebaseToken, async (req, res) => {
       return res.status(400).json({ error: 'Invalid token: missing uid or email' });
     }
 
-    const user = await UserModel.findOne({ firebaseUid: uid });
+    // Check if user exists
+    let user = await UserModel.findOne({ firebaseUid: uid });
 
+    // If user doesn't exist, create them (Auto-Registration for Google Sign-In)
     if (!user) {
-      return res.status(404).json({ error: 'User not registered. Please register first.' });
+      console.log(' New user detected from Google Sign-In, registering:', email);
+      user = new UserModel({
+        email,
+        firebaseUid: uid,
+      });
+      await user.save();
     }
 
     console.log('✅ User logged in:', email);
@@ -79,13 +86,13 @@ router.post('/login', verifyFirebaseToken, async (req, res) => {
 router.get('/me', verifyFirebaseToken, async (req, res) => {
   try {
     if (!req.user) return res.status(500).json({ error: 'No user decoded from token' });
-    
+
     const user = await UserModel.findOne({ firebaseUid: req.user.uid });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    res.status(200).json({ 
+    res.status(200).json({
       userId: user._id,
-      uid: req.user.uid, 
+      uid: req.user.uid,
       email: req.user.email,
       registered: true
     });
