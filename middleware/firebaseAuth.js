@@ -31,6 +31,12 @@ if (!admin.apps.length && serviceAccount) {
 
 // Middleware to verify Firebase ID token
 export async function verifyFirebaseToken(req, res, next) {
+  // Check if Firebase Admin is initialized
+  if (!admin.apps.length || !serviceAccount) {
+    console.error('❌ Firebase Admin not initialized. Check service account file at:', serviceAccountPath);
+    return res.status(500).json({ error: 'Firebase service not configured on server' });
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'No token provided' });

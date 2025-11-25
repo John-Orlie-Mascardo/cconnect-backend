@@ -12,11 +12,15 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
   try {
     const { email, uid } = req.user;
 
+    // Validate required fields
+    if (!email || !uid) {
+      return res.status(400).json({ error: 'Email and Firebase UID are required' });
+    }
 
     // Check if user already exists
-    const existing = await UserModel.findOne({ firebaseUid: uid });
+    const existing = await UserModel.findOne({ $or: [{ firebaseUid: uid }, { email: email }] });
     if (existing) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(409).json({ error: 'User already registered' });
     }
 
     // Save new user to MongoDB
@@ -24,10 +28,17 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
       email,
       firebaseUid: uid,
     });
-    await newUser.save();
+    const savedUser = await newUser.save();
 
-    res.status(201).json({ message: ' User registered & saved to MongoDB' });
+    console.log('✅ User registered:', email);
+    res.status(201).json({ message: 'User registered successfully', userId: savedUser._id, email: savedUser.email });
   } catch (error) {
+    console.error('❌ Registration error:', error.message);
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(409).json({ error: `${field} already registered` });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -39,26 +50,49 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
 router.post('/login', verifyFirebaseToken, async (req, res) => {
   try {
     const { uid, email } = req.user;
+
+    // Validate required fields from token
+    if (!uid || !email) {
+      return res.status(400).json({ error: 'Invalid token: missing uid or email' });
+    }
+
     const user = await UserModel.findOne({ firebaseUid: uid });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found in MongoDB' });
+      return res.status(404).json({ error: 'User not registered. Please register first.' });
     }
 
-    res.json({
-      message: '✅ Login successful',
-      email,
-      uid,
+    console.log('✅ User logged in:', email);
+    res.status(200).json({
+      message: 'Login successful',
+      userId: user._id,
+      email: user.email,
+      firebaseUid: user.firebaseUid,
     });
   } catch (error) {
+    console.error('❌ Login error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Protected endpoint for POC: returns decoded token info
-router.get('/me', verifyFirebaseToken, (req, res) => {
-  if (!req.user) return res.status(500).json({ error: 'No user decoded from token' });
-  res.json({ uid: req.user.uid, email: req.user.email, claims: req.user });
+// Protected endpoint: returns authenticated user info
+router.get('/me', verifyFirebaseToken, async (req, res) => {
+  try {
+    if (!req.user) return res.status(500).json({ error: 'No user decoded from token' });
+    
+    const user = await UserModel.findOne({ firebaseUid: req.user.uid });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json({ 
+      userId: user._id,
+      uid: req.user.uid, 
+      email: req.user.email,
+      registered: true
+    });
+  } catch (error) {
+    console.error('❌ /me error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export const userRoutes = router;

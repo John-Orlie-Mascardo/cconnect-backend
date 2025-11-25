@@ -15,18 +15,25 @@ const createProduct = async (req, res) => {
       stock,
     } = req.body;
 
-    if (!name || price === undefined) {
-      return res.status(400).json({ message: 'Name and price are required' });
+    // Comprehensive validation
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Product name is required' });
+    }
+    if (price === undefined || price === null || price === '') {
+      return res.status(400).json({ error: 'Price is required' });
+    }
+    if (isNaN(price) || parseFloat(price) < 0) {
+      return res.status(400).json({ error: 'Price must be a valid positive number' });
     }
 
     const qty = quantity !== undefined ? quantity : stock !== undefined ? stock : 0;
 
     // Get uploaded file from multer
-    const image = req.file ? req.file.filename : null;
+    const imageFile = req.file ? req.file.filename : null;
 
     const product = new Product({
-      name,
-      price,
+      name: name.trim(),
+      price: parseFloat(price),
       description,
       productId,
       size,
@@ -34,13 +41,14 @@ const createProduct = async (req, res) => {
       condition,
       quantity: qty,
       stock: stock !== undefined ? stock : qty,
-      image, // store filename in MongoDB
+      image: imageFile,
     });
 
     const saved = await product.save();
-    res.status(201).json(saved);
+    console.log('✅ Product created:', saved._id);
+    res.status(201).json({ message: 'Product created successfully', product: saved });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Product creation error:', err.message);
     res.status(500).json({ error: err.message });
   }
 };
@@ -49,6 +57,14 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const updateData = { ...req.body };
+
+    // Validate if price is being updated
+    if (updateData.price !== undefined) {
+      if (isNaN(updateData.price) || parseFloat(updateData.price) < 0) {
+        return res.status(400).json({ error: 'Price must be a valid positive number' });
+      }
+      updateData.price = parseFloat(updateData.price);
+    }
 
     // If a new file is uploaded, replace image field
     if (req.file) {
@@ -61,11 +77,12 @@ const updateProduct = async (req, res) => {
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ message: 'Product not found' });
+    if (!updated) return res.status(404).json({ error: 'Product not found' });
 
-    res.status(200).json(updated);
+    console.log('✅ Product updated:', updated._id);
+    res.status(200).json({ message: 'Product updated successfully', product: updated });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Product update error:', err.message);
     res.status(500).json({ error: err.message });
   }
 };

@@ -23,11 +23,26 @@ const uploadsPath = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
 app.use('/uploads', express.static(uploadsPath));
 
-// CORS setup
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:61458';
+// CORS setup - Allow any localhost origin for development
 app.use(
   cors({
-    origin: CLIENT_ORIGIN,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      // Allow any localhost origin (for Flutter web dev server with random ports)
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        return callback(null, true);
+      }
+
+      // In production, check against CLIENT_ORIGIN env variable
+      const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN;
+      if (CLIENT_ORIGIN && origin === CLIENT_ORIGIN) {
+        return callback(null, true);
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   })
