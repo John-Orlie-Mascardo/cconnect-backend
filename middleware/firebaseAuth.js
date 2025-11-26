@@ -7,17 +7,32 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load your Firebase service account JSON safely with fs
-const serviceAccountPath = path.join(__dirname, '../config/firebase-service-account.json');
-
+// Load Firebase service account from environment variable (Render) or file (local)
 let serviceAccount = null;
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error('⚠️ Firebase service account not found at', serviceAccountPath);
-} else {
+
+// Try environment variable first (for Render deployment)
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   try {
-    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    console.log('🔥 Firebase service account loaded from environment variable');
   } catch (err) {
-    console.error('❌ Failed to parse firebase service account JSON:', err.message);
+    console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT env variable:', err.message);
+  }
+}
+
+// Fall back to file-based loading (for local development)
+if (!serviceAccount) {
+  const serviceAccountPath = path.join(__dirname, '../config/firebase-service-account.json');
+  if (!fs.existsSync(serviceAccountPath)) {
+    console.error('⚠️ Firebase service account not found at', serviceAccountPath);
+    console.error('💡 Set FIREBASE_SERVICE_ACCOUNT environment variable or add the file');
+  } else {
+    try {
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      console.log('🔥 Firebase service account loaded from file');
+    } catch (err) {
+      console.error('❌ Failed to parse firebase service account JSON:', err.message);
+    }
   }
 }
 
@@ -33,7 +48,7 @@ if (!admin.apps.length && serviceAccount) {
 export async function verifyFirebaseToken(req, res, next) {
   // Check if Firebase Admin is initialized
   if (!admin.apps.length || !serviceAccount) {
-    console.error('❌ Firebase Admin not initialized. Check service account file at:', serviceAccountPath);
+    console.error('❌ Firebase Admin not initialized. Check FIREBASE_SERVICE_ACCOUNT env variable or service account file.');
     return res.status(500).json({ error: 'Firebase service not configured on server' });
   }
 
