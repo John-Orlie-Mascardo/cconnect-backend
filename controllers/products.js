@@ -3,6 +3,13 @@ import Product from '../models/product.js';
 // Create a new product
 const createProduct = async (req, res) => {
   try {
+    // Enhanced logging for debugging
+    console.log('\n🔵 === Incoming Product Creation Request ===');
+    console.log('📋 Request Body:', req.body);
+    console.log('📁 Uploaded File:', req.file ? req.file.filename : 'No file');
+    console.log('🌐 Origin:', req.headers.origin || 'No origin header');
+    console.log('📝 Content-Type:', req.headers['content-type']);
+
     const {
       name,
       price,
@@ -57,6 +64,11 @@ const createProduct = async (req, res) => {
 // Update existing product
 const updateProduct = async (req, res) => {
   try {
+    console.log('\n🔵 === Incoming Product Update Request ===');
+    console.log('📋 Product ID:', req.params.id);
+    console.log('📝 Update Data:', req.body);
+    console.log('📁 New File:', req.file ? req.file.filename : 'No new file');
+
     const updateData = { ...req.body };
 
     // Validate if price is being updated

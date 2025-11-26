@@ -48,6 +48,13 @@ app.use(
   })
 );
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`\n📨 ${req.method} ${req.path} - Origin: ${req.headers.origin || 'none'}`);
+  next();
+});
+
+
 // Base URL
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api';
 app.locals.baseUrl = API_BASE_URL;
