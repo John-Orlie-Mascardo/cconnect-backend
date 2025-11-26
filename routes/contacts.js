@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyFirebaseToken } from '../middleware/Firebaseauth.js';
+import { verifyFirebaseToken } from '../middleware/firebaseAuth.js';
 import {
   getAllContacts,
   getContactById,
