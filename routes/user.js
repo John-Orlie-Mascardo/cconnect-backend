@@ -23,15 +23,19 @@ router.post('/register', verifyFirebaseToken, async (req, res) => {
       return res.status(409).json({ error: 'User already registered' });
     }
 
+    // Determine role based on email
+    const role = email === process.env.ADMIN_EMAIL ? 'admin' : 'user';
+
     // Save new user to MongoDB
     const newUser = new UserModel({
       email,
       firebaseUid: uid,
+      role,
     });
     const savedUser = await newUser.save();
 
-    console.log('✅ User registered:', email);
-    res.status(201).json({ message: 'User registered successfully', userId: savedUser._id, email: savedUser.email });
+    console.log('✅ User registered:', email, 'Role:', role);
+    res.status(201).json({ message: 'User registered successfully', userId: savedUser._id, email: savedUser.email, role: savedUser.role });
   } catch (error) {
     console.error('❌ Registration error:', error.message);
     // Handle duplicate key errors
@@ -62,19 +66,22 @@ router.post('/login', verifyFirebaseToken, async (req, res) => {
     // If user doesn't exist, create them (Auto-Registration for Google Sign-In)
     if (!user) {
       console.log(' New user detected from Google Sign-In, registering:', email);
+      const role = email === process.env.ADMIN_EMAIL ? 'admin' : 'user';
       user = new UserModel({
         email,
         firebaseUid: uid,
+        role,
       });
       await user.save();
     }
 
-    console.log('✅ User logged in:', email);
+    console.log('✅ User logged in:', email, 'Role:', user.role);
     res.status(200).json({
       message: 'Login successful',
       userId: user._id,
       email: user.email,
       firebaseUid: user.firebaseUid,
+      role: user.role,
     });
   } catch (error) {
     console.error('❌ Login error:', error.message);
@@ -94,6 +101,7 @@ router.get('/me', verifyFirebaseToken, async (req, res) => {
       userId: user._id,
       uid: req.user.uid,
       email: req.user.email,
+      role: user.role,
       registered: true
     });
   } catch (error) {

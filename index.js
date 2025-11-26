@@ -16,13 +16,6 @@ import productRouter from './routes/product.js';
 
 
 const app = express();
-app.use(express.json());
-
-// Serve uploads folder
-const uploadsPath = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
-app.use('/uploads', express.static(uploadsPath));
-
 // CORS setup - Allow any localhost origin for development
 app.use(
   cors({
@@ -47,6 +40,13 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(express.json());
+
+// Serve uploads folder
+const uploadsPath = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath);
+app.use('/uploads', express.static(uploadsPath));
 
 // Request logging middleware
 app.use((req, res, next) => {

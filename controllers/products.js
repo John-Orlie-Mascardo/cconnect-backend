@@ -37,7 +37,7 @@ const createProduct = async (req, res) => {
 
 
     // Get uploaded file from multer
-    const imageFile = req.file ? req.file.filename : null;
+    const imageFile = req.file ? '/uploads/' + req.file.filename : null;
 
     const product = new Product({
       name: name.trim(),
@@ -81,7 +81,7 @@ const updateProduct = async (req, res) => {
 
     // If a new file is uploaded, replace image field
     if (req.file) {
-      updateData.image = req.file.filename;
+      updateData.image = '/uploads/' + req.file.filename;
     }
 
     const updated = await Product.findByIdAndUpdate(
@@ -116,7 +116,17 @@ const deleteProduct = async (req, res) => {
 const getProducts = async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
-    res.status(200).json(products);
+
+    // Normalize image paths for existing data
+    const productsWithUrl = products.map(product => {
+      const p = product.toObject();
+      if (p.image && !p.image.startsWith('/uploads/') && !p.image.startsWith('http')) {
+        p.image = '/uploads/' + p.image;
+      }
+      return p;
+    });
+
+    res.status(200).json(productsWithUrl);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -132,7 +142,12 @@ const getProduct = async (req, res) => {
     const base = req.app.locals.baseUrl; // "http://localhost:3000/api"
     const productUrl = `${base}/products/${product._id}`;
 
-    res.status(200).json({ ...product.toObject(), url: productUrl });
+    const p = product.toObject();
+    if (p.image && !p.image.startsWith('/uploads/') && !p.image.startsWith('http')) {
+      p.image = '/uploads/' + p.image;
+    }
+
+    res.status(200).json({ ...p, url: productUrl });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
