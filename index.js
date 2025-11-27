@@ -14,6 +14,8 @@ import { userRoutes } from './routes/user.js';
 import { contactsRoutes } from './routes/contacts.js';
 import productRouter from './routes/product.js';
 import { passwordResetRoutes } from './routes/passwordReset.js';
+import { cartRoutes } from './routes/cart.js';
+import { addressRoutes } from './routes/address.js';
 
 
 
@@ -66,6 +68,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api', productRouter);
 app.use('/api/password-reset', passwordResetRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/address', addressRoutes);
 
 
 // MongoDB connection

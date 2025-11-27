@@ -9,7 +9,16 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   // Password reset token fields
   resetPasswordToken: { type: String },
-  resetPasswordExpires: { type: Date }
+  resetPasswordExpires: { type: Date },
+  // Addresses
+  addresses: [{
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String,
+    country: String,
+    isDefault: { type: Boolean, default: false }
+  }]
 });
 
 export const UserModel = mongoose.model('User', userSchema);
