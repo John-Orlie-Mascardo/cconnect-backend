@@ -13,6 +13,8 @@ import fs from 'fs';
 import { userRoutes } from './routes/user.js';
 import { contactsRoutes } from './routes/contacts.js';
 import productRouter from './routes/product.js';
+import { passwordResetRoutes } from './routes/passwordReset.js';
+
 
 
 const app = express();
@@ -63,6 +65,8 @@ app.locals.baseUrl = API_BASE_URL;
 app.use('/api/user', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api', productRouter);
+app.use('/api/password-reset', passwordResetRoutes);
+
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
