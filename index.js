@@ -16,6 +16,8 @@ import productRouter from './routes/product.js';
 import { passwordResetRoutes } from './routes/passwordReset.js';
 import { cartRoutes } from './routes/cart.js';
 import { addressRoutes } from './routes/address.js';
+import { orderRoutes } from './routes/orders.js';
+import { wishlistRoutes } from './routes/wishlist.js';
 
 
 
@@ -63,13 +65,23 @@ app.use((req, res, next) => {
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000/api';
 app.locals.baseUrl = API_BASE_URL;
 
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Backend is running' });
+});
+
+
 // Routes
+app.use('/api/user/addresses', addressRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api', productRouter);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/cart', cartRoutes);
-app.use('/api/address', addressRoutes);
+// app.use('/api/address', addressRoutes); // Moved to /api/user/addresses
+app.use('/api/orders', orderRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 
 // MongoDB connection

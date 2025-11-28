@@ -206,6 +206,8 @@ router.get('/me', verifyAuth, async (req, res) => {
       uid: user.firebaseUid,
       email: user.email,
       role: user.role,
+      name: user.name,
+      phone: user.phone,
       registered: true
     });
   } catch (error) {
@@ -333,6 +335,50 @@ router.post('/cart', verifyAuth, async (req, res) => {
 
   } catch (error) {
     console.error('❌ Add to cart error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 🔹 Update User Profile
+ * PUT /api/user/profile
+ * Body: { name?: string, phone?: string }
+ */
+router.put('/profile', verifyAuth, async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    // Use firebaseUid or userId depending on what's available
+    const query = req.user.uid ? { firebaseUid: req.user.uid } : { _id: req.user.userId };
+
+    const user = await UserModel.findOne(query);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update fields if provided
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined) {
+      // Basic phone validation (optional)
+      if (phone && !/^[\d\s\-\+\(\)]+$/.test(phone)) {
+        return res.status(400).json({ error: 'Invalid phone number format' });
+      }
+      user.phone = phone;
+    }
+
+    await user.save();
+
+    console.log('✅ Profile updated for:', user.email);
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      userId: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone
+    });
+
+  } catch (error) {
+    console.error('❌ Profile update error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

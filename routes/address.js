@@ -33,23 +33,23 @@ router.get('/', verifyAuth, ensureUser, async (req, res) => {
 
 /**
  * 🔹 Add New Address
- * POST /api/address/add
- * Body: { street, city, state, zipCode, country, isDefault }
+ * POST /api/user/addresses
+ * Body: { province, city, barangay, postalCode, streetDetails, isDefault }
  */
-router.post('/add', verifyAuth, ensureUser, async (req, res) => {
+router.post('/', verifyAuth, ensureUser, async (req, res) => {
     try {
-        const { street, city, state, zipCode, country, isDefault } = req.body;
+        const { province, city, barangay, postalCode, streetDetails, isDefault } = req.body;
 
-        if (!street || !city || !state || !zipCode || !country) {
-            return res.status(400).json({ error: 'All address fields are required' });
+        if (!province || !city || !barangay || !postalCode || !streetDetails) {
+            return res.status(400).json({ error: 'All address fields are required (province, city, barangay, postalCode, streetDetails)' });
         }
 
         const newAddress = {
-            street,
+            province,
             city,
-            state,
-            zipCode,
-            country,
+            barangay,
+            postalCode,
+            streetDetails,
             isDefault: isDefault || false
         };
 
@@ -74,7 +74,7 @@ router.post('/add', verifyAuth, ensureUser, async (req, res) => {
 
 /**
  * 🔹 Update Address
- * PUT /api/address/:addressId
+ * PUT /api/user/addresses/:addressId
  */
 router.put('/:addressId', verifyAuth, ensureUser, async (req, res) => {
     try {
@@ -91,12 +91,12 @@ router.put('/:addressId', verifyAuth, ensureUser, async (req, res) => {
             req.mongoUser.addresses.forEach(addr => addr.isDefault = false);
         }
 
-        // Update fields
-        if (updates.street) address.street = updates.street;
+        // Update fields (Philippine format)
+        if (updates.province) address.province = updates.province;
         if (updates.city) address.city = updates.city;
-        if (updates.state) address.state = updates.state;
-        if (updates.zipCode) address.zipCode = updates.zipCode;
-        if (updates.country) address.country = updates.country;
+        if (updates.barangay) address.barangay = updates.barangay;
+        if (updates.postalCode) address.postalCode = updates.postalCode;
+        if (updates.streetDetails) address.streetDetails = updates.streetDetails;
         if (updates.isDefault !== undefined) address.isDefault = updates.isDefault;
 
         await req.mongoUser.save();

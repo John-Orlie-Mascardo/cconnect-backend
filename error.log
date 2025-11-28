@@ -1,0 +1,6 @@
+Order Error: Order validation failed: orderNumber: Path `orderNumber` is required.
+Stack: ValidationError: Order validation failed: orderNumber: Path `orderNumber` is required.
+    at Document.invalidate (C:\Users\kengb\cconnect-backend\node_modules\mongoose\lib\document.js:3362:32)
+    at C:\Users\kengb\cconnect-backend\node_modules\mongoose\lib\document.js:3123:17
+    at C:\Users\kengb\cconnect-backend\node_modules\mongoose\lib\schemaType.js:1420:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
