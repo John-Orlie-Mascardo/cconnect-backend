@@ -214,4 +214,127 @@ router.get('/me', verifyAuth, async (req, res) => {
   }
 });
 
+/**
+ * 🔹 Get User Cart (Compatibility Route for Frontend)
+ * GET /api/user/cart
+ * 
+ * Returns cart items in the format expected by the frontend.
+ */
+router.get('/cart', verifyAuth, async (req, res) => {
+  try {
+    const { uid } = req.user;
+
+    // Import CartModel
+    const { CartModel } = await import('../models/cart.js');
+
+    // Find user in MongoDB
+    const user = await UserModel.findOne({ firebaseUid: uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Find cart and populate product details
+    let cart = await CartModel.findOne({ user: user._id }).populate('items.product');
+
+    // If no cart exists, return empty cart
+    if (!cart) {
+      return res.status(200).json({ items: [] });
+    }
+
+    // Format items to match frontend expectations
+    const formattedItems = cart.items.map(item => {
+      const product = item.product;
+      return {
+        title: product.name,
+        price: `₱${product.price.toFixed(2)}`, // Format as currency string
+        image: product.image || '/uploads/default.jpg',
+        size: item.size || null, // Size if stored per cart item
+        qty: item.quantity,
+        productId: product._id.toString()
+      };
+    });
+
+    console.log('✅ Cart retrieved via /api/user/cart:', formattedItems.length, 'items');
+    res.status(200).json({ items: formattedItems });
+
+  } catch (error) {
+    console.error('❌ Get cart error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 🔹 Add to Cart (Compatibility Route for Frontend)
+ * POST /api/user/cart
+ * Body: { productId, quantity }
+ * 
+ * This route exists for backward compatibility with the frontend.
+ * It forwards requests to the cart service logic.
+ */
+router.post('/cart', verifyAuth, async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { productId, quantity, size } = req.body; // Added size parameter
+
+    // Import models needed for cart operations
+    const { CartModel } = await import('../models/cart.js');
+    const Product = (await import('../models/product.js')).default;
+
+    // Find user in MongoDB
+    const user = await UserModel.findOne({ firebaseUid: uid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Validate quantity
+    const qty = parseInt(quantity) || 1;
+
+    // Validate product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Find or create cart
+    let cart = await CartModel.findOne({ user: user._id });
+    if (!cart) {
+      cart = new CartModel({ user: user._id, items: [] });
+    }
+
+    // Check if item with same product AND size already exists
+    const existingItemIndex = cart.items.findIndex(
+      item => item.product.toString() === productId && item.size === size
+    );
+
+    if (existingItemIndex > -1) {
+      // Update quantity for existing item with same size
+      cart.items[existingItemIndex].quantity += qty;
+      cart.items[existingItemIndex].price = product.price;
+    } else {
+      // Add new item with size
+      cart.items.push({
+        product: productId,
+        quantity: qty,
+        price: product.price,
+        size: size ? parseInt(size) : null // Store size if provided
+      });
+    }
+
+    await cart.save();
+
+    // Return populated cart
+    const populatedCart = await CartModel.findById(cart._id).populate('items.product');
+
+    console.log('✅ Item added to cart via /api/user/cart:', product.name);
+    res.status(200).json({
+      message: 'Item added to cart successfully',
+      cart: populatedCart
+    });
+
+  } catch (error) {
+    console.error('❌ Add to cart error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const userRoutes = router;

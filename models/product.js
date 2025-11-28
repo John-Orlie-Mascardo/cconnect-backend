@@ -6,7 +6,7 @@ const productSchema = new mongoose.Schema({
   description: String,
   // Optional product identifier coming from the frontend form
   productId: { type: String },
-  size: { type: String },
+  sizes: [{ type: Number }], // Array of available sizes (e.g., [4, 5, 6, 7, 8, 9, 10, 11, 12])
   materials: { type: String },
   condition: { type: String },
   // quantity available (keeps `stock` for backwards compatibility)

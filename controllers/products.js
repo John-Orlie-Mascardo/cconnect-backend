@@ -15,7 +15,7 @@ const createProduct = async (req, res) => {
       price,
       description,
       productId,
-      size,
+      sizes, // Changed from 'size' to 'sizes' (array)
       materials,
       condition,
       quantity,
@@ -35,6 +35,15 @@ const createProduct = async (req, res) => {
 
     const qty = quantity !== undefined ? quantity : stock !== undefined ? stock : 0;
 
+    // Parse sizes array - handle both JSON array and comma-separated string
+    let parsedSizes = [];
+    if (sizes) {
+      if (Array.isArray(sizes)) {
+        parsedSizes = sizes.map(s => parseFloat(s)).filter(s => !isNaN(s));
+      } else if (typeof sizes === 'string') {
+        parsedSizes = sizes.split(',').map(s => parseFloat(s.trim())).filter(s => !isNaN(s));
+      }
+    }
 
     // Get uploaded file from multer
     const imageFile = req.file ? '/uploads/' + req.file.filename : null;
@@ -44,7 +53,7 @@ const createProduct = async (req, res) => {
       price: parseFloat(price),
       description,
       productId,
-      size,
+      sizes: parsedSizes, // Store as array of numbers
       materials,
       condition,
       quantity: qty,
@@ -77,6 +86,17 @@ const updateProduct = async (req, res) => {
         return res.status(400).json({ error: 'Price must be a valid positive number' });
       }
       updateData.price = parseFloat(updateData.price);
+    }
+
+    // Parse sizes array if being updated
+    if (updateData.sizes) {
+      let parsedSizes = [];
+      if (Array.isArray(updateData.sizes)) {
+        parsedSizes = updateData.sizes.map(s => parseFloat(s)).filter(s => !isNaN(s));
+      } else if (typeof updateData.sizes === 'string') {
+        parsedSizes = updateData.sizes.split(',').map(s => parseFloat(s.trim())).filter(s => !isNaN(s));
+      }
+      updateData.sizes = parsedSizes;
     }
 
     // If a new file is uploaded, replace image field

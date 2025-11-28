@@ -15,6 +15,10 @@ const cartItemSchema = new mongoose.Schema({
     price: {
         type: Number,
         required: true
+    },
+    size: {
+        type: Number, // Store the selected size (e.g., 4, 5, 6, 7, 8, 9, 10, 11, 12)
+        required: false
     }
 });
 
