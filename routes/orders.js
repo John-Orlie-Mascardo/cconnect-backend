@@ -73,6 +73,7 @@ router.post('/create', verifyAuth, ensureUser, async (req, res) => {
 
             orderItems.push({
                 product: item.productId,
+                productId: item.productId,
                 quantity: item.quantity,
                 size: item.size || null,
                 price: item.price || product.price
@@ -105,9 +106,12 @@ router.post('/create', verifyAuth, ensureUser, async (req, res) => {
 
         await newOrder.save();
 
+        console.log('🔍 DEBUG: Order items saved:', JSON.stringify(newOrder.items, null, 2));
+
         // Populate product details for response
         const populatedOrder = await OrderModel.findById(newOrder._id).populate('items.product');
 
+        console.log('🔍 DEBUG: Order items after populate:', JSON.stringify(populatedOrder.items, null, 2));
         console.log('✅ Order created:', newOrder.orderNumber, 'for user:', req.mongoUser.email);
 
         res.status(201).json({
@@ -139,9 +143,21 @@ router.get('/', verifyAuth, ensureUser, async (req, res) => {
             .populate('items.product')
             .sort({ createdAt: -1 }); // Most recent first
 
+        // Transform to ensure productId, name, and image are included
+        const transformedOrders = orders.map(order => {
+            const orderObj = order.toObject();
+            orderObj.items = orderObj.items.map(item => ({
+                ...item,
+                productId: item.productId || (item.product ? item.product._id.toString() : null),
+                name: item.name || (item.product ? item.product.name : null),
+                image: item.image || (item.product ? item.product.image : null)
+            }));
+            return orderObj;
+        });
+
         res.status(200).json({
-            count: orders.length,
-            orders
+            count: transformedOrders.length,
+            orders: transformedOrders
         });
 
     } catch (error) {
@@ -195,9 +211,26 @@ router.get('/all/list', verifyAuth, ensureUser, async (req, res) => {
             .populate('user', 'email name phone')
             .sort({ createdAt: -1 });
 
+        // Transform orders to ensure productId, name, and image are in the response
+        const transformedOrders = orders.map(order => {
+            const orderObj = order.toObject();
+            orderObj.items = orderObj.items.map(item => ({
+                ...item,
+                productId: item.productId || (item.product ? item.product._id.toString() : null),
+                name: item.name || (item.product ? item.product.name : null),
+                image: item.image || (item.product ? item.product.image : null)
+            }));
+            return orderObj;
+        });
+
+        console.log('🔍 DEBUG: Returning', transformedOrders.length, 'orders');
+        if (transformedOrders.length > 0) {
+            console.log('🔍 DEBUG: First order items:', JSON.stringify(transformedOrders[0].items, null, 2));
+        }
+
         res.status(200).json({
-            count: orders.length,
-            orders
+            count: transformedOrders.length,
+            orders: transformedOrders
         });
 
     } catch (error) {
