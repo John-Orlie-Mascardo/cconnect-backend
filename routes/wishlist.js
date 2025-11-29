@@ -54,31 +54,42 @@ router.get('/', verifyAuth, ensureUser, async (req, res) => {
  */
 router.post('/add', verifyAuth, ensureUser, async (req, res) => {
     try {
+        console.log('🔖 Wishlist add request - Body:', req.body);
+        console.log('🔖 Wishlist add request - Body:', req.body);
         const { productId } = req.body;
 
         if (!productId) {
+            console.log('❌ Missing productId');
             return res.status(400).json({ error: 'Product ID is required' });
         }
 
+        console.log('🔍 Looking for product:', productId);
         // Validate product exists
         const product = await Product.findById(productId);
         if (!product) {
+            console.log('❌ Product not found:', productId);
             return res.status(404).json({ error: 'Product not found' });
         }
+        console.log('✅ Product found:', product.name);
 
         // Find or create wishlist
         let wishlist = await WishlistModel.findOne({ user: req.mongoUser._id });
         if (!wishlist) {
+            console.log('📝 Creating new wishlist for user');
             wishlist = new WishlistModel({ user: req.mongoUser._id, items: [] });
+        } else {
+            console.log('📋 Existing wishlist found with', wishlist.items.length, 'items');
         }
 
         // Check if product already in wishlist
         const alreadyExists = wishlist.items.some(item => item.toString() === productId);
         if (alreadyExists) {
+            console.log('⚠️ Product already in wishlist');
             return res.status(400).json({ error: 'Product already in wishlist' });
         }
 
         // Add product to wishlist
+        console.log('➕ Adding product to wishlist');
         wishlist.items.push(productId);
         await wishlist.save();
 

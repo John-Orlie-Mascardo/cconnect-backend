@@ -7,6 +7,39 @@ import { UserModel } from '../models/user.js';
 
 const router = express.Router();
 
+// Log all cart requests
+router.use((req, res, next) => {
+    console.log(`\n🛒 CART REQUEST: ${req.method} ${req.path}`);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+    next();
+});
+
+// Helper function to sanitize cart data (replace null with empty strings/defaults)
+const sanitizeCartData = (cart) => {
+    if (!cart) return null;
+
+    const sanitized = cart.toObject();
+
+    // Sanitize each item in the cart
+    sanitized.items = sanitized.items.map(item => {
+        if (item.product) {
+            // Replace null string fields with empty strings
+            item.product.description = item.product.description || '';
+            item.product.materials = item.product.materials || '';
+            item.product.condition = item.product.condition || '';
+            item.product.image = item.product.image || '';
+            item.product.productId = item.product.productId || '';
+            item.product.sizes = item.product.sizes || [];
+        }
+        // Handle optional size field in cart item
+        item.size = item.size || null;
+        return item;
+    });
+
+    return sanitized;
+};
+
 // Middleware to ensure user exists in MongoDB
 const ensureUser = async (req, res, next) => {
     try {
@@ -36,7 +69,7 @@ router.get('/', verifyAuth, ensureUser, async (req, res) => {
             await cart.save();
         }
 
-        res.status(200).json(cart);
+        res.status(200).json(sanitizeCartData(cart));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -49,12 +82,15 @@ router.get('/', verifyAuth, ensureUser, async (req, res) => {
  */
 router.post('/add', verifyAuth, ensureUser, async (req, res) => {
     try {
+        console.log('🛒 Add to cart request - Body:', req.body);
         const { productId, quantity } = req.body;
         const qty = parseInt(quantity) || 1;
 
+        console.log('🔍 Looking for product:', productId);
         // Validate product
         const product = await Product.findById(productId);
         if (!product) {
+            console.log('❌ Product not found:', productId);
             return res.status(404).json({ error: 'Product not found' });
         }
 
@@ -85,7 +121,7 @@ router.post('/add', verifyAuth, ensureUser, async (req, res) => {
 
         // Return populated cart
         const populatedCart = await CartModel.findById(cart._id).populate('items.product');
-        res.status(200).json(populatedCart);
+        res.status(200).json(sanitizeCartData(populatedCart));
 
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -99,20 +135,25 @@ router.post('/add', verifyAuth, ensureUser, async (req, res) => {
  */
 router.put('/update', verifyAuth, ensureUser, async (req, res) => {
     try {
+        console.log('🔄 PUT /update called with body:', req.body);
         const { productId, quantity } = req.body;
         const qty = parseInt(quantity);
 
         if (qty < 1) {
+            console.log('❌ Quantity validation failed:', qty);
             return res.status(400).json({ error: 'Quantity must be at least 1' });
         }
 
         const cart = await CartModel.findOne({ user: req.mongoUser._id });
         if (!cart) {
+            console.log('❌ Cart not found for user:', req.mongoUser._id);
             return res.status(404).json({ error: 'Cart not found' });
         }
 
         const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
         if (itemIndex === -1) {
+            console.log('❌ Product not found in cart:', productId);
+            console.log('Cart items:', cart.items.map(i => i.product.toString()));
             return res.status(404).json({ error: 'Item not found in cart' });
         }
 
@@ -120,9 +161,11 @@ router.put('/update', verifyAuth, ensureUser, async (req, res) => {
         await cart.save();
 
         const populatedCart = await CartModel.findById(cart._id).populate('items.product');
-        res.status(200).json(populatedCart);
+        console.log('✅ Cart updated successfully');
+        res.status(200).json(sanitizeCartData(populatedCart));
 
     } catch (error) {
+        console.log('❌ Error in PUT /update:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -144,7 +187,7 @@ router.delete('/remove/:productId', verifyAuth, ensureUser, async (req, res) => 
         await cart.save();
 
         const populatedCart = await CartModel.findById(cart._id).populate('items.product');
-        res.status(200).json(populatedCart);
+        res.status(200).json(sanitizeCartData(populatedCart));
 
     } catch (error) {
         res.status(500).json({ error: error.message });

@@ -340,6 +340,35 @@ router.post('/cart', verifyAuth, async (req, res) => {
 });
 
 /**
+ * 🔹 Get User Profile
+ * GET /api/user/profile
+ */
+router.get('/profile', verifyAuth, async (req, res) => {
+  try {
+    // Use firebaseUid or userId depending on what's available
+    const query = req.user.uid ? { firebaseUid: req.user.uid } : { _id: req.user.userId };
+
+    const user = await UserModel.findOne(query);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('✅ Profile fetched for:', user.email);
+    res.status(200).json({
+      userId: user._id,
+      email: user.email,
+      name: user.name || '',
+      phone: user.phone || '',
+      role: user.role
+    });
+
+  } catch (error) {
+    console.error('❌ Profile fetch error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * 🔹 Update User Profile
  * PUT /api/user/profile
  * Body: { name?: string, phone?: string }
