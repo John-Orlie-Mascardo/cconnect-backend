@@ -18,6 +18,7 @@ import { cartRoutes } from './routes/cart.js';
 import { addressRoutes } from './routes/address.js';
 import { orderRoutes } from './routes/orders.js';
 import { wishlistRoutes } from './routes/wishlist.js';
+import { aiRoutes } from './routes/ai.js';
 
 
 
@@ -82,6 +83,7 @@ app.use('/api/cart', cartRoutes);
 // app.use('/api/address', addressRoutes); // Moved to /api/user/addresses
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 // MongoDB connection

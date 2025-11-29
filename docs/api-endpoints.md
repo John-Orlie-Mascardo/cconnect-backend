@@ -313,3 +313,127 @@ This will test all new endpoints including:
 - Wishlist operations
 - Order creation
 - Address management
+
+---
+
+## AI-Powered Features
+
+### AI Chat (Customer Support)
+
+#### Send Chat Message
+```
+POST /api/ai/chat
+Content-Type: application/json
+
+Body:
+{
+  "message": "What kind of shoes do you have?",
+  "userId": "optional_user_id"
+}
+
+Response:
+{
+  "response": "We have a wide variety of shoes including...",
+  "moderation": {
+    "requiresCreativeResponse": false
+  }
+}
+```
+
+### AI Product Recommendations
+
+#### Get Personalized Recommendations
+```
+POST /api/ai/recommend
+Content-Type: application/json
+
+Body:
+{
+  "userId": "optional_user_id",
+  "preferences": "I like comfortable running shoes",
+  "limit": 5
+}
+
+Response:
+{
+  "recommendations": [
+    {
+      "_id": "...",
+      "name": "Nike Air Max",
+      "price": 1299,
+      "recommendationReason": "Perfect for running with excellent cushioning"
+    }
+  ]
+}
+```
+
+### AI Product Description Generator
+
+#### Generate Product Description
+```
+POST /api/ai/generate-description
+Content-Type: application/json
+
+Body:
+{
+  "name": "Nike Air Max 2024",
+  "materials": "Mesh and synthetic leather",
+  "condition": "Brand New",
+  "sizes": [7, 8, 9, 10, 11],
+  "additionalInfo": "Perfect for running"
+}
+
+Response:
+{
+  "description": "Experience ultimate comfort with the Nike Air Max 2024...",
+  "productDetails": {...}
+}
+```
+
+### AI Enhanced Search
+
+#### Search with Natural Language
+```
+POST /api/ai/search
+Content-Type: application/json
+
+Body:
+{
+  "query": "comfortable shoes for running",
+  "limit": 10
+}
+
+Response:
+{
+  "query": "comfortable shoes for running",
+  "results": [
+    {
+      "_id": "...",
+      "name": "Nike Air Max",
+      "price": 1299,
+      ...
+    }
+  ],
+  "totalResults": 5
+}
+```
+
+### AI Testing
+
+Run the AI test script:
+```powershell
+.\test-ai.ps1
+```
+
+This tests:
+- Chat with normal queries
+- Chat with sensitive content (creative responses)
+- Product recommendations
+- Description generation
+- Enhanced search
+
+**Note:** Add your OpenAI API key to `.env` before testing:
+```
+OPENAI_API_KEY=your-actual-api-key-here
+```
+
