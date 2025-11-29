@@ -1,6 +1,5 @@
 import express from 'express';
 import { CartModel } from '../models/cart.js';
-
 import Product from '../models/product.js';
 import { verifyAuth } from '../middleware/auth.js';
 import { UserModel } from '../models/user.js';

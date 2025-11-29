@@ -1,5 +1,6 @@
 import express from 'express';
 import { OrderModel } from '../models/order.js';
+import { NotificationModel } from '../models/notification.js';
 import Product from '../models/product.js';
 import { verifyAuth } from '../middleware/auth.js';
 import { UserModel } from '../models/user.js';
@@ -106,13 +107,31 @@ router.post('/create', verifyAuth, ensureUser, async (req, res) => {
 
         await newOrder.save();
 
-        console.log('🔍 DEBUG: Order items saved:', JSON.stringify(newOrder.items, null, 2));
-
         // Populate product details for response
         const populatedOrder = await OrderModel.findById(newOrder._id).populate('items.product');
 
-        console.log('🔍 DEBUG: Order items after populate:', JSON.stringify(populatedOrder.items, null, 2));
-        console.log('✅ Order created:', newOrder.orderNumber, 'for user:', req.mongoUser.email);
+        // Notify Admins
+        try {
+            console.log('🔔 Attempting to notify admins about new order...');
+            const admins = await UserModel.find({ role: 'admin' });
+            console.log(`🔔 Found ${admins.length} admins`);
+
+            const notifications = admins.map(admin => ({
+                recipient: admin._id,
+                title: 'New Order Received',
+                message: `New order ${newOrder.orderNumber} placed by ${req.mongoUser.name || req.mongoUser.email}. Total: ₱${totalAmount}`,
+                type: 'admin_alert'
+            }));
+
+            if (notifications.length > 0) {
+                await NotificationModel.insertMany(notifications);
+                console.log(`✅ Successfully notified ${notifications.length} admins`);
+            } else {
+                console.log('⚠️ No admins to notify');
+            }
+        } catch (notifError) {
+            console.error('❌ Failed to notify admins:', notifError.message);
+        }
 
         res.status(201).json({
             message: 'Order created successfully',
@@ -278,7 +297,24 @@ router.put('/:orderId/status', verifyAuth, ensureUser, async (req, res) => {
 
         await order.save();
 
+        await order.save();
+
         console.log('✅ Order status updated:', order.orderNumber);
+
+        // Notify Customer
+        try {
+            console.log(`🔔 Attempting to notify customer ${order.user} about status update...`);
+            const notification = new NotificationModel({
+                recipient: order.user,
+                title: 'Order Update',
+                message: `Your order ${order.orderNumber} status has been updated to ${orderStatus}.`,
+                type: 'order_update'
+            });
+            await notification.save();
+            console.log('✅ Customer notified successfully');
+        } catch (notifError) {
+            console.error('❌ Failed to create notification:', notifError.message);
+        }
 
         res.status(200).json({
             message: 'Order status updated successfully',
