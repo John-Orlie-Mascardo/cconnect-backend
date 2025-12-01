@@ -412,4 +412,49 @@ router.put('/profile', verifyAuth, async (req, res) => {
   }
 });
 
+/**
+ * 🔹 Get All Users (Admin)
+ * GET /api/user/all
+ */
+router.get('/all', verifyAuth, async (req, res) => {
+  try {
+    // Optional: Check if user is admin
+    // if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+
+    const users = await UserModel.find({}).select('-password');
+
+    // Map to format expected by frontend
+    const formattedUsers = users.map(u => ({
+      id: u._id,
+      name: u.name || 'Unknown User',
+      email: u.email,
+      phoneNumber: u.phone || 'N/A',
+      joinDate: u._id.getTimestamp().toISOString().split('T')[0], // Extract date from ObjectId
+      totalOrders: 0, // TODO: Fetch actual order count if needed
+      status: 'active' // Default status
+    }));
+
+    console.log(`✅ Retrieved ${users.length} users for admin`);
+    res.status(200).json(formattedUsers);
+  } catch (error) {
+    console.error('❌ Get all users error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 🔹 Get User Count (Admin/Owner Dashboard)
+ * GET /api/user/count
+ */
+router.get('/count', verifyAuth, async (req, res) => {
+  try {
+    const count = await UserModel.countDocuments({});
+    console.log('✅ User count retrieved:', count);
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error('❌ Get user count error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export const userRoutes = router;
