@@ -431,13 +431,48 @@ router.get('/all', verifyAuth, async (req, res) => {
       phoneNumber: u.phone || 'N/A',
       joinDate: u._id.getTimestamp().toISOString().split('T')[0], // Extract date from ObjectId
       totalOrders: 0, // TODO: Fetch actual order count if needed
-      status: 'active' // Default status
+      status: u.status || 'active' // Use actual status
     }));
 
     console.log(`✅ Retrieved ${users.length} users for admin`);
     res.status(200).json(formattedUsers);
   } catch (error) {
     console.error('❌ Get all users error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * 🔹 Update User Status (Admin)
+ * PUT /api/user/:userId/status
+ * Body: { status: 'active' | 'banned' }
+ */
+router.put('/:userId/status', verifyAuth, async (req, res) => {
+  try {
+    // Check if requester is admin (optional but good)
+    // if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access denied' });
+
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (!['active', 'banned'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      { status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log(`✅ User ${user.email} status updated to ${status}`);
+    res.status(200).json({ message: 'User status updated', user });
+  } catch (error) {
+    console.error('❌ Update status error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
